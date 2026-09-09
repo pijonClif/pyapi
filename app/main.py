@@ -1,5 +1,6 @@
 #fastapi
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 #sqlalchemy
 from .database import engine, get_db
@@ -8,9 +9,22 @@ from . import models
 from .config import settings
 from .routers import post, user, auth, vote
 
-models.Base.metadata.create_all(bind=engine)
+#initialises db tables by sqlalchemy
+#but we got alembic now tho dont need it
+
+#models.Base.metadata.create_all(bind=engine)
 
 app=FastAPI()
+
+origins=["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 #sqlalchepy test path
 #@app.get("/sqlalchemy")

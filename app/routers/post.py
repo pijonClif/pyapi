@@ -18,7 +18,7 @@ router=APIRouter(
 
 #@router.get("/", response_model=List[schemas.PostResponse])
 @router.get("/", response_model=List[schemas.PostOut])
-def get_posts(db: Session=Depends(get_db), limit: int=5, skip: int=0, search: Optional[str]=""):
+async def get_posts(db: Session=Depends(get_db), limit: int=5, skip: int=0, search: Optional[str]=""):
     #cursor.execute("""SELECT * FROM posts""")
     #posts=cursor.fetchall()
 
@@ -29,7 +29,7 @@ def get_posts(db: Session=Depends(get_db), limit: int=5, skip: int=0, search: Op
     return posts
 
 @router.get("/latest", response_model=schemas.PostOut)
-def get_latest_post(db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+async def get_latest_post(db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     #cursor.execute("""SELECT * FROM posts ORDER BY id DESC LIMIT 1""")
     #latest_post=cursor.fetchone()   
 
@@ -38,7 +38,7 @@ def get_latest_post(db: Session=Depends(get_db), current_user: int = Depends(oau
     return latest_post
 
 @router.get("/{id}", response_model=schemas.PostOut)
-def get_post(id: int, db: Session=Depends(get_db)):
+async def get_post(id: int, db: Session=Depends(get_db)):
     #cursor.execute("""SELECT * FROM posts WHERE id = %s""", str(id))
     #post=cursor.fetchone()
 
@@ -52,7 +52,7 @@ def get_post(id: int, db: Session=Depends(get_db)):
     return post
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_posts(post: schemas.PostCreate, db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+async def create_posts(post: schemas.PostCreate, db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     #cursor.execute("""INSERT INTO posts (title, content, published) VALUES (%s,%s,%s) RETURNING *""", (post.title, post.content, post.published))
     #new_post=cursor.fetchone()
     #conn.commit()
@@ -60,7 +60,7 @@ def create_posts(post: schemas.PostCreate, db: Session=Depends(get_db), current_
     #new_post=models.Post(title=post.title, content=post.content, published=post.published)
 
     # print(current_user.email)
-    new_post=models.Post(owner_id=current_user.id, **post.dict())
+    new_post=models.Post(owner_id=current_user.id, **post.model.dump())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -69,7 +69,7 @@ def create_posts(post: schemas.PostCreate, db: Session=Depends(get_db), current_
 
 
 @router.put("/{id}", response_model=schemas.PostResponse)
-def update_post(id: int, post: schemas.PostCreate, db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+async def update_post(id: int, post: schemas.PostCreate, db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     #cursor.execute("""UPDATE posts SET title=%s, content=%s, published=%s WHERE id=%s RETURNING *""",(post.title, post.content, post.published, str(id)))
     #updated_post=cursor.fetchone()
     #conn.commit()
@@ -84,14 +84,14 @@ def update_post(id: int, post: schemas.PostCreate, db: Session=Depends(get_db), 
     if post.owner_id!=current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorised to perform requested action")
 
-    post_query.update(post.dict(), synchronize_session=False)
+    post_query.update(post.model_dump(), synchronize_session=False)
     db.commit()
     return post_query.first()
     #return{"data": updated_post}
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+async def delete_post(id: int, db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     #cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING *""", str(id))
     #deleted_post=cursor.fetchone()
     #conn.commit()
