@@ -18,7 +18,7 @@ router=APIRouter(
 
 #@router.get("/", response_model=List[schemas.PostResponse])
 @router.get("/", response_model=List[schemas.PostOut])
-async def get_posts(db: Session=Depends(get_db), limit: int=5, skip: int=0, search: Optional[str]=""):
+async def get_posts(db: Session=Depends(get_db), limit: int=5, skip: int=0, search: Optional[str]="", current_user: int = Depends(oauth2.get_current_user)):
     #cursor.execute("""SELECT * FROM posts""")
     #posts=cursor.fetchall()
 
@@ -38,7 +38,7 @@ async def get_latest_post(db: Session=Depends(get_db), current_user: int = Depen
     return latest_post
 
 @router.get("/{id}", response_model=schemas.PostOut)
-async def get_post(id: int, db: Session=Depends(get_db)):
+async def get_post(id: int, db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     #cursor.execute("""SELECT * FROM posts WHERE id = %s""", str(id))
     #post=cursor.fetchone()
 
@@ -75,13 +75,13 @@ async def update_post(id: int, post: schemas.PostCreate, db: Session=Depends(get
     #conn.commit()
 
     post_query= db.query(models.Post).filter(models.Post.id == id)
-    post=post_query.first()
+    update_post=post_query.first()
 
-    if post == None:
+    if update_post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with id: {id} was not found")
 
-    if post.owner_id!=current_user.id:
+    if update_post.owner_id!=current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorised to perform requested action")
 
     post_query.update(post.model_dump(), synchronize_session=False)

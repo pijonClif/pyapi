@@ -12,7 +12,6 @@ class PostBase(BaseModel):
 class PostCreate(PostBase):
     pass
 
-
 class PostResponse(PostBase):
     id: int
     created_at: datetime
